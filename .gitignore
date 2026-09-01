@@ -1,0 +1,5 @@
+node_modules/
+
+# Local task store created by running the CLI in this directory.
+tasks.json
+tasks.json.*.tmp

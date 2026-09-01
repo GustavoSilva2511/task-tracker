@@ -1,0 +1,24 @@
+{
+  "name": "task-tracker",
+  "version": "1.0.0",
+  "description": "A command line task tracker written in TypeScript with no runtime dependencies.",
+  "type": "module",
+  "bin": {
+    "task-cli": "./bin/task-cli.mjs"
+  },
+  "packageManager": "pnpm@11.5.3",
+  "engines": {
+    "node": ">=22.6.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "task-cli": "node src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/*.test.ts\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "@types/node": "^24.3.0"
+  },
+  "license": "MIT"
+}
