@@ -30,9 +30,9 @@ export async function loadTasks(storePath: string): Promise<Task[]> {
   } catch (error) {
     if (isErrnoException(error) && error.code === 'ENOENT') return [];
     if (isErrnoException(error) && error.code === 'EISDIR') {
-      throw new UserError(`Cannot read tasks: ${storePath} is a directory, not a file.`);
+      throw new UserError(`Não é possível ler as tarefas: ${storePath} é um diretório, não um arquivo.`);
     }
-    throw new UserError(`Cannot read ${storePath}: ${describe(error)}`);
+    throw new UserError(`Não é possível ler ${storePath}: ${describe(error)}`);
   }
 
   if (raw.trim() === '') return [];
@@ -42,12 +42,12 @@ export async function loadTasks(storePath: string): Promise<Task[]> {
     parsed = JSON.parse(raw);
   } catch {
     throw new UserError(
-      `${storePath} does not contain valid JSON. Fix or remove the file and try again.`,
+      `${storePath} não contém JSON válido. Corrija ou remova o arquivo e tente novamente.`,
     );
   }
 
   if (!Array.isArray(parsed)) {
-    throw new UserError(`${storePath} must contain a JSON array of tasks.`);
+    throw new UserError(`${storePath} deve conter uma matriz JSON de tarefas.`);
   }
 
   return parsed.map((entry, index) => parseTask(entry, index, storePath));
@@ -68,39 +68,39 @@ export async function saveTasks(storePath: string, tasks: readonly Task[]): Prom
   } catch (error) {
     await unlink(tempPath).catch(() => {});
     if (isErrnoException(error) && (error.code === 'EACCES' || error.code === 'EPERM')) {
-      throw new UserError(`Cannot write to ${storePath}: permission denied.`);
+      throw new UserError(`Não é possível escrever em ${storePath}: permissão negada.`);
     }
     if (isErrnoException(error) && error.code === 'ENOENT') {
-      throw new UserError(`Cannot write to ${storePath}: the directory does not exist.`);
+      throw new UserError(`Não é possível escrever em ${storePath}: o diretório não existe.`);
     }
-    throw new UserError(`Cannot write to ${storePath}: ${describe(error)}`);
+    throw new UserError(`Não é possível escrever em ${storePath}: ${describe(error)}`);
   }
 }
 
 function parseTask(entry: unknown, index: number, storePath: string): Task {
-  const where = `${storePath} (entry ${index + 1})`;
+  const where = `${storePath} (entrada ${index + 1})`;
 
   if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
-    throw new UserError(`Malformed task in ${where}: expected an object.`);
+    throw new UserError(`Tarefa malformada em ${where}: esperava um objeto.`);
   }
 
   const record = entry as Record<string, unknown>;
   const { id, description, status, createdAt, updatedAt } = record;
 
   if (typeof id !== 'number' || !Number.isSafeInteger(id) || id < 1) {
-    throw new UserError(`Malformed task in ${where}: "id" must be a positive integer.`);
+    throw new UserError(`Tarefa malformada em ${where}: "id" deve ser um inteiro positivo.`);
   }
   if (typeof description !== 'string') {
-    throw new UserError(`Malformed task in ${where}: "description" must be a string.`);
+    throw new UserError(`Tarefa malformada em ${where}: "description" deve ser uma string.`);
   }
   if (!isTaskStatus(status)) {
     throw new UserError(
-      `Malformed task in ${where}: "status" must be todo, in-progress, or done.`,
+      `Tarefa malformada em ${where}: "status" deve ser todo, in-progress ou done.`,
     );
   }
   if (typeof createdAt !== 'string' || typeof updatedAt !== 'string') {
     throw new UserError(
-      `Malformed task in ${where}: "createdAt" and "updatedAt" must be strings.`,
+      `Tarefa malformada em ${where}: "createdAt" e "updatedAt" devem ser strings.`,
     );
   }
 

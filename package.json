@@ -1,7 +1,7 @@
 {
   "name": "task-tracker",
   "version": "1.0.0",
-  "description": "A command line task tracker written in TypeScript with no runtime dependencies.",
+  "description": "Um tracker de tarefas de linha de comando escrito em TypeScript sem dependências de runtime.",
   "type": "module",
   "bin": {
     "task-cli": "./bin/task-cli.mjs"
