@@ -1,6 +1,13 @@
 import type { Task } from './types.ts';
 
-const HEADERS = ['ID', 'STATUS', 'CREATED', 'UPDATED', 'DESCRIPTION'] as const;
+const HEADERS = ['ID', 'STATUS', 'CRIADO', 'ATUALIZADO', 'DESCRIÇÃO'] as const;
+
+// Mapeamento de status para português
+const statusLabels: Record<string, string> = {
+  todo: 'pendente',
+  'in-progress': 'andamento',
+  done: 'concluído',
+};
 
 /**
  * Renders tasks as a fixed-width table. Column widths are computed from the
@@ -9,7 +16,7 @@ const HEADERS = ['ID', 'STATUS', 'CREATED', 'UPDATED', 'DESCRIPTION'] as const;
 export function formatTaskTable(tasks: readonly Task[]): string {
   const rows = tasks.map((task) => [
     String(task.id),
-    task.status,
+    statusLabels[task.status] || task.status,
     formatTimestamp(task.createdAt),
     formatTimestamp(task.updatedAt),
     task.description,
@@ -32,7 +39,7 @@ export function formatTaskTable(tasks: readonly Task[]): string {
 
 /** One-line summary used in confirmation messages. */
 export function formatTaskSummary(task: Task): string {
-  return `[${task.id}] ${task.description} (${task.status})`;
+  return `[${task.id}] ${task.description} (${statusLabels[task.status] || task.status})`;
 }
 
 /**

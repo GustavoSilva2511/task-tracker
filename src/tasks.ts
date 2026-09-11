@@ -76,7 +76,7 @@ export function selectTasks(tasks: readonly Task[], filter: ListFilter): Task[] 
 
 export function findTask(tasks: readonly Task[], id: number): Task {
   const task = tasks.find((candidate) => candidate.id === id);
-  if (!task) throw new UserError(`No task found with ID ${id}.`);
+  if (!task) throw new UserError(`Nenhuma tarefa encontrada com ID ${id}.`);
   return task;
 }
 
@@ -95,11 +95,11 @@ function replace(
 function normalizeDescription(description: string): string {
   const trimmed = description.trim();
   if (trimmed === '') {
-    throw new UserError('The task description cannot be empty.');
+    throw new UserError('A descrição da tarefa não pode estar vazia.');
   }
   if (trimmed.length > MAX_DESCRIPTION_LENGTH) {
     throw new UserError(
-      `The task description cannot be longer than ${MAX_DESCRIPTION_LENGTH} characters.`,
+      `A descrição da tarefa não pode ter mais de ${MAX_DESCRIPTION_LENGTH} caracteres.`,
     );
   }
   return trimmed;
