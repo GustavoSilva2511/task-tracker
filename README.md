@@ -1,76 +1,70 @@
+# Solução desafio roadmap
+https://roadmap.sh/projects/task-tracker
+
 # Task Tracker
 
-A command line task tracker: `task-cli` records what you need to do, what you
-are working on, and what you have finished, storing everything in a JSON file in
-the current directory.
+Um tracker de tarefas de linha de comando: `task-cli` registra o que você precisa fazer, o que está fazendo e o que concluiu, armazenando tudo em um arquivo JSON no diretório atual.
 
-Written in TypeScript with **zero runtime dependencies**. Node 22.6+ strips the
-types at load time, so `src/*.ts` runs directly — there is no build step and no
-bundler. Only Node's own modules are used: `node:fs/promises`, `node:path`,
-`node:crypto`, and `node:test` for the tests. TypeScript itself is a dev-only
-dependency used for type checking.
+Escrito em TypeScript com **zero dependências de runtime**. Node 22.6+ remove os tipos TypeScript ao carregar, então `src/*.ts` é executado diretamente — não há etapa de build e nem bundler. Apenas módulos nativos do Node são usados: `node:fs/promises`, `node:path`, `node:crypto` e `node:test` para os testes. TypeScript é uma dependência de desenvolvimento usada apenas para verificação de tipos.
 
-## Requirements
+## Requisitos
 
-- Node.js >= 22.6 (tested on 24.16)
-- pnpm >= 10 (tested on 11.5.3) — `corepack enable pnpm` picks up the pinned
-  version from `packageManager` in `package.json`
+- Node.js >= 22.6 (testado em 24.16)
+- pnpm >= 10 (testado em 11.5.3) — `corepack enable pnpm` pega a versão pinhada do `packageManager` no `package.json`
 
-## Install
+## Instalação
 
 ```bash
-pnpm install            # dev dependencies only: typescript + @types/node
-pnpm link --global      # optional: puts `task-cli` on your PATH
+pnpm install            # dependências de desenvolvimento apenas: typescript + @types/node
+pnpm link --global      # opcional: coloca `task-cli` no PATH
 ```
 
-Without `pnpm link --global`, invoke it directly:
+Sem `pnpm link --global`, invoque-o diretamente:
 
 ```bash
 node /path/to/task-tracker/bin/task-cli.mjs list
 ```
 
-## Usage
+## Uso
 
 ```bash
-task-cli add "Buy groceries"                    # Task added successfully (ID: 1)
-task-cli update 1 "Buy groceries and cook dinner"
-task-cli delete 1
-task-cli mark-in-progress 1
-task-cli mark-done 1
-task-cli mark-todo 1                            # move a task back to todo
-task-cli list                                   # all tasks
-task-cli list todo
-task-cli list in-progress
-task-cli list done
-task-cli list not-done                          # todo + in-progress
-task-cli help
+task-cli adicionar "Comprar mantimentos"                    # Tarefa adicionada com sucesso (ID: 1)
+task-cli atualizar 1 "Comprar mantimentos e cozinhar jantar"
+task-cli excluir 1
+task-cli marcar-andamento 1
+task-cli marcar-concluído 1
+task-cli marcar-pendente 1                            # volta uma tarefa para pendente
+task-cli listar                                   # todas as tarefas
+task-cli listar pendente
+task-cli listar andamento
+task-cli listar concluído
+task-cli listar não-concluído                      # pendente + andamento
+task-cli ajuda
 ```
 
-`list` prints an aligned table:
+`listar` imprime uma tabela alinhada:
 
 ```
-ID  STATUS       CREATED           UPDATED           DESCRIPTION
+ID  STATUS       CRIADO           ATUALIZADO           DESCRIÇÃO
 --  -----------  ----------------  ----------------  -----------------------------
-1   in-progress  2026-09-01 19:55  2026-09-01 19:55  Buy groceries and cook dinner
-2   done         2026-09-01 19:55  2026-09-01 19:55  Write the report
+1   andamento    2026-09-01 19:55  2026-09-01 19:55  Comprar mantimentos e cozinhar jantar
+2   concluído    2026-09-01 19:55  2026-09-01 19:55  Escrever o relatório
 
-2 tasks.
+2 tarefas.
 ```
 
-Commands exit `0` on success and `1` on any error, with the message on stderr —
-so the CLI composes cleanly in scripts.
+Os comandos saem `0` em caso de sucesso e `1` em qualquer erro, com a mensagem na stderr —
+então o CLI se compõe bem em scripts.
 
-## Storage
+## Armazenamento
 
-Tasks live in `tasks.json` in the current working directory, created on the first
-write and stored as pretty-printed JSON. Set `TASK_TRACKER_FILE` to point at a
-different path.
+As tarefas vivem em `tasks.json` no diretório atual, criado na primeira escrita e armazenado como JSON pretty-print. Defina `TASK_TRACKER_FILE` para apontar para um caminho diferente.
 
 ```json
 [
   {
     "id": 1,
-    "description": "Buy groceries and cook dinner",
+    "description": "Comprar mantimentos e cozinhar jantar",
     "status": "in-progress",
     "createdAt": "2026-09-01T22:55:25.345Z",
     "updatedAt": "2026-09-01T22:55:25.714Z"
@@ -78,37 +72,24 @@ different path.
 ]
 ```
 
-Status is one of `todo`, `in-progress`, or `done`. Timestamps are ISO 8601;
-`updatedAt` changes whenever a task is modified.
+Status é um de `todo`, `in-progress` ou `done`. Os timestamps são ISO 8601;
+`updatedAt` é atualizado sempre que uma tarefa é modificada.
 
-Writes go to a temporary file in the same directory and are then renamed, so an
-interrupted run can never leave a half-written store behind.
+Escritas vão para um arquivo temporário no mesmo diretório e são depois renomeadas, então uma execução interrompida nunca pode deixar um armazenamento meio escrito.
 
-## Project layout
+## Casos de borda tratados
 
-| File | Responsibility |
-| --- | --- |
-| `src/types.ts` | `Task` / `TaskStatus` and their runtime guards |
-| `src/storage.ts` | Reading, validating and atomically writing `tasks.json` |
-| `src/tasks.ts` | Pure, immutable task operations (add/update/delete/status/filter) |
-| `src/format.ts` | Table and summary rendering |
-| `src/cli.ts` | Positional argument parsing and command dispatch |
-| `src/index.ts` | Entry point and exit codes |
-| `bin/task-cli.mjs` | Launcher for `pnpm link` / global installs |
+- Arquivo `tasks.json` ausente, vazio ou corromido — mensagem clara, nunca um stack trace
+- Entradas de tarefa malformadas — o erro nomeia a entrada e o campo problemático
+- Comandos desconhecidos, contagens de argumentos erradas, IDs não numéricos ou desconhecidos
+- Descrições em branco ou muito longas (>500 caracteres)
+- IDs são `max + 1`, então eles permanecem únicos após exclusões
+- Um comando falho deixa o armazenamento byte-por-byte inalterado
+- `updatedAt` não é atualizado quando um `mark-*` é um no-op
 
-## Edge cases handled
-
-- Missing, empty or corrupt `tasks.json` — clear message, never a stack trace
-- Malformed task entries — the error names the offending entry and field
-- Unknown commands, wrong argument counts, non-numeric or unknown IDs
-- Blank or over-long (>500 char) descriptions
-- IDs are `max + 1`, so they stay unique after deletions
-- A failed command leaves the store byte-for-byte unchanged
-- `updatedAt` is not bumped when a `mark-*` is a no-op
-
-## Development
+## Desenvolvimento
 
 ```bash
-pnpm test         # 22 tests via node:test
+pnpm test         # 22 testes via node:test
 pnpm typecheck
 ```

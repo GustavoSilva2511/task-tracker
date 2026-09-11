@@ -11,6 +11,22 @@ import {
 } from './tasks.ts';
 import { TASK_STATUSES, isTaskStatus, type Task, type TaskStatus } from './types.ts';
 
+// Mapeamento de status para exibição em português
+const statusLabels: Record<TaskStatus, string> = {
+  todo: 'pendente',
+  'in-progress': 'andamento',
+  done: 'concluído',
+};
+
+// Mapeamento de filtros para exibição em português
+const filterLabels: Record<ListFilter, string> = {
+  all: 'todos',
+  'not-done': 'não-concluído',
+  todo: 'pendente',
+  'in-progress': 'andamento',
+  done: 'concluído',
+};
+
 export interface CliContext {
   /** Absolute path of the JSON store. */
   storePath: string;
@@ -44,8 +60,8 @@ export async function run(argv: readonly string[], context: CliContext): Promise
     return EXIT_OK;
   } catch (error) {
     if (error instanceof UserError) {
-      context.writeError(`Error: ${error.message}`);
-      context.writeError(`Run "task-cli help" to see the available commands.`);
+      context.writeError(`Erro: ${error.message}`);
+      context.writeError(`Execute "task-cli ajuda" para ver os comandos disponíveis.`);
       return EXIT_ERROR;
     }
     throw error;
@@ -55,51 +71,51 @@ export async function run(argv: readonly string[], context: CliContext): Promise
 async function dispatch(argv: readonly string[], context: CliContext): Promise<void> {
   const [command, ...rest] = argv;
 
-  if (command === undefined || command === 'help' || command === '--help' || command === '-h') {
+  if (command === undefined || command === 'ajuda' || command === '--help' || command === '-h') {
     context.write(usage());
     return;
   }
 
   switch (command) {
-    case 'add':
+    case 'adicionar':
       return commandAdd(rest, context);
-    case 'update':
+    case 'atualizar':
       return commandUpdate(rest, context);
-    case 'delete':
+    case 'excluir':
       return commandDelete(rest, context);
-    case 'mark-todo':
+    case 'marcar-pendente':
       return commandMark(rest, 'todo', context);
-    case 'mark-in-progress':
+    case 'marcar-andamento':
       return commandMark(rest, 'in-progress', context);
-    case 'mark-done':
+    case 'marcar-concluído':
       return commandMark(rest, 'done', context);
-    case 'list':
+    case 'listar':
       return commandList(rest, context);
     default:
-      throw new UserError(`Unknown command "${command}".`);
+      throw new UserError(`Comando desconhecido "${command}".`);
   }
 }
 
 async function commandAdd(args: readonly string[], context: CliContext): Promise<void> {
-  const [description] = expectArgs(args, 1, 'add "<description>"');
+  const [description] = expectArgs(args, 1, 'adicionar "<descrição>"');
   await mutate(context, (tasks) => addTask(tasks, description, context.now()), (task) =>
-    `Task added successfully (ID: ${task.id})`,
+    `Tarefa adicionada com sucesso (ID: ${task.id})`,
   );
 }
 
 async function commandUpdate(args: readonly string[], context: CliContext): Promise<void> {
-  const [rawId, description] = expectArgs(args, 2, 'update <id> "<description>"');
+  const [rawId, description] = expectArgs(args, 2, 'atualizar <id> "<descrição>"');
   const id = parseId(rawId);
   await mutate(context, (tasks) => updateTask(tasks, id, description, context.now()), (task) =>
-    `Task updated successfully: ${formatTaskSummary(task)}`,
+    `Tarefa atualizada com sucesso: ${formatTaskSummary(task)}`,
   );
 }
 
 async function commandDelete(args: readonly string[], context: CliContext): Promise<void> {
-  const [rawId] = expectArgs(args, 1, 'delete <id>');
+  const [rawId] = expectArgs(args, 1, 'excluir <id>');
   const id = parseId(rawId);
   await mutate(context, (tasks) => deleteTask(tasks, id), (task) =>
-    `Task deleted successfully (ID: ${task.id})`,
+    `Tarefa excluída com sucesso (ID: ${task.id})`,
   );
 }
 
@@ -108,29 +124,29 @@ async function commandMark(
   status: TaskStatus,
   context: CliContext,
 ): Promise<void> {
-  const [rawId] = expectArgs(args, 1, `mark-${status} <id>`);
+  const [rawId] = expectArgs(args, 1, `marcar-${status} <id>`);
   const id = parseId(rawId);
   await mutate(context, (tasks) => setStatus(tasks, id, status, context.now()), (task) =>
-    `Task marked as ${status} (ID: ${task.id})`,
+    `Tarefa marcada como ${statusLabels[status]} (ID: ${task.id})`,
   );
 }
 
 async function commandList(args: readonly string[], context: CliContext): Promise<void> {
   if (args.length > 1) {
-    throw new UserError(`Too many arguments. Usage: task-cli list [${listFilterNames().join('|')}]`);
+    throw new UserError(`Muitos argumentos. Uso: task-cli listar [${listFilterNames().join('|')}]`);
   }
 
   const filter = parseListFilter(args[0]);
   const tasks = selectTasks(await loadTasks(context.storePath), filter);
 
   if (tasks.length === 0) {
-    context.write(filter === 'all' ? 'No tasks yet.' : `No tasks with status "${filter}".`);
+    context.write(filter === 'all' ? 'Nenhuma tarefa ainda.' : `Nenhuma tarefa com status "${filterLabels[filter]}".`);
     return;
   }
 
   context.write(formatTaskTable(tasks));
   context.write('');
-  context.write(`${tasks.length} task${tasks.length === 1 ? '' : 's'}.`);
+  context.write(`${tasks.length} tarefa${tasks.length === 1 ? '' : 's'}.`);
 }
 
 /** Read the store, apply one change, write it back and report the outcome. */
@@ -152,12 +168,12 @@ function expectArgs(args: readonly string[], count: 1, example: string): [string
 function expectArgs(args: readonly string[], count: 2, example: string): [string, string];
 function expectArgs(args: readonly string[], count: number, example: string): string[] {
   if (args.length < count) {
-    throw new UserError(`Missing arguments. Usage: task-cli ${example}`);
+    throw new UserError(`Argumentos faltando. Uso: task-cli ${example}`);
   }
   if (args.length > count) {
     throw new UserError(
-      `Too many arguments. Usage: task-cli ${example} ` +
-        `(quote descriptions that contain spaces)`,
+      `Muitos argumentos. Uso: task-cli ${example} ` +
+        `(cite descrições com espaços entre aspas)`,
     );
   }
   return [...args];
@@ -165,11 +181,11 @@ function expectArgs(args: readonly string[], count: number, example: string): st
 
 function parseId(raw: string | undefined): number {
   if (raw === undefined || !/^\d+$/.test(raw.trim())) {
-    throw new UserError(`Invalid task ID "${raw ?? ''}". IDs are positive whole numbers.`);
+    throw new UserError(`ID de tarefa inválido "${raw ?? ''}". IDs são números inteiros positivos.`);
   }
   const id = Number(raw.trim());
   if (!Number.isSafeInteger(id) || id < 1) {
-    throw new UserError(`Invalid task ID "${raw}". IDs are positive whole numbers.`);
+    throw new UserError(`ID de tarefa inválido "${raw}". IDs são números inteiros positivos.`);
   }
   return id;
 }
@@ -177,34 +193,39 @@ function parseId(raw: string | undefined): number {
 function parseListFilter(raw: string | undefined): ListFilter {
   if (raw === undefined) return 'all';
   const value = raw.trim();
-  if (value === 'all' || value === 'not-done' || isTaskStatus(value)) return value;
+  // Aceita tanto os nomes em português quanto os originais em inglês para compatibilidade
+  if (value === 'todos' || value === 'all') return 'all';
+  if (value === 'nao-concluido' || value === 'not-done') return 'not-done';
+  if (value === 'pendente' || value === 'todo') return 'todo';
+  if (value === 'andamento' || value === 'in-progress') return 'in-progress';
+  if (value === 'concluido' || value === 'done') return 'done';
   throw new UserError(
-    `Unknown status "${raw}". Expected one of: ${listFilterNames().join(', ')}.`,
+    `Status desconhecido "${raw}". Esperado um dos: ${listFilterNames().join(', ')}.`,
   );
 }
 
 function listFilterNames(): string[] {
-  return [...TASK_STATUSES, 'not-done', 'all'];
+  return ['pendente', 'andamento', 'concluído', 'não-concluído', 'todos'];
 }
 
 function usage(): string {
   return [
-    'task-cli - track what you need to do, what you are doing, and what is done.',
+    'task-cli - registre o que você precisa fazer, o que está fazendo e o que concluiu.',
     '',
-    'Usage:',
-    '  task-cli add "<description>"          Add a new task (starts as todo)',
-    '  task-cli update <id> "<description>"  Change a task description',
-    '  task-cli delete <id>                  Remove a task',
-    '  task-cli mark-in-progress <id>        Mark a task as in progress',
-    '  task-cli mark-done <id>               Mark a task as done',
-    '  task-cli mark-todo <id>               Move a task back to todo',
-    '  task-cli list [status]                List tasks, optionally by status',
-    '  task-cli help                         Show this message',
+    'Uso:',
+    '  task-cli adicionar "<descrição>"          Adiciona uma nova tarefa (começa como pendente)',
+    '  task-cli atualizar <id> "<descrição>"  Altera a descrição de uma tarefa',
+    '  task-cli excluir <id>                  Remove uma tarefa',
+    '  task-cli marcar-andamento <id>        Marca uma tarefa como em andamento',
+    '  task-cli marcar-concluído <id>         Marca uma tarefa como concluída',
+    '  task-cli marcar-pendente <id>         Volta uma tarefa para pendente',
+    '  task-cli listar [status]                Lista tarefas, opcionalmente por status',
+    '  task-cli ajuda                          Mostra esta mensagem',
     '',
-    `Statuses: ${TASK_STATUSES.join(', ')}`,
-    'List filters: todo, in-progress, done, not-done (todo + in-progress), all',
+    `Status: ${TASK_STATUSES.join(', ')}`,
+    'Filtros de lista: pendente, andamento, concluído, não-concluído (pendente + andamento), todos',
     '',
-    'Tasks are stored as JSON in tasks.json in the current directory.',
-    'Set TASK_TRACKER_FILE to use a different path.',
+    'As tarefas são armazenadas em JSON em tasks.json no diretório atual.',
+    'Defina TASK_TRACKER_FILE para usar um caminho diferente.',
   ].join('\n');
 }
